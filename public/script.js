@@ -1,12 +1,13 @@
 //playermodle rotates
 //make control w not close tab
-//ask for name on page load then put that above head and sue for chat
+//ask for name on page load then put that above head and use for chat
+//when player diconects chat says "name" disconcted
 //real time chat that cleares on server restart but saves until then
 //sword dosnt go through floor
 //make zombie with noises
 //fix block breaking
 //make it so when trees and rocks are detsoryed they save
-//minecraft soundtrack in bacground\
+//minecraft soundtrack in bacground
 
 import * as THREE from "./modules/three.module.js";
 import { PointerLockControls } from "./modules/PointerLookControls.js";
@@ -983,3 +984,10 @@ socket.on("updatePlayers", (players) => {
 function onPlayerMove(position) {
   socket.emit("playerMove", { id: socket.id, position });
 }
+
+//does not work
+window.addEventListener("keydown", function (e) {
+  if ((e.ctrlKey || e.metaKey) && e.key === "w") {
+    e.preventDefault();
+  }
+});
