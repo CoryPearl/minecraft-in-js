@@ -54,6 +54,7 @@ io.on("connection", (socket) => {
   socket.on("disconnect", () => {
     delete players[socket.id];
     io.emit("updatePlayers", players);
+    io.emit("playerDisconnect", socket.id);
   });
 });
 

@@ -1,12 +1,12 @@
-//make player modle a actual modle nota  square
-//player modle not visible to player whos modle it is
+//playermodle rotates
+//make control w not close tab
 //ask for name on page load then put that above head and sue for chat
 //real time chat that cleares on server restart but saves until then
 //sword dosnt go through floor
 //make zombie with noises
 //fix block breaking
 //make it so when trees and rocks are detsoryed they save
-//minecraft soundtrack in bacground
+//minecraft soundtrack in bacground\
 
 import * as THREE from "./modules/three.module.js";
 import { PointerLockControls } from "./modules/PointerLookControls.js";
@@ -613,7 +613,7 @@ const setActiveSlot = (slotIndex) => {
         camera.remove(sword);
       }
     } else {
-      sword.position.set(3.3, -0.25, -5);
+      sword.position.set(3.5, -1.3, -5);
       sword.rotation.set(0.5, 0, 1);
 
       camera.add(sword);
@@ -669,7 +669,7 @@ document.addEventListener("keydown", (event) => {
     setActiveSlot(keyNumber - 1);
 
     if (activeSlot === 0) {
-      sword.position.set(3.3, -0.25, -5);
+      sword.position.set(3.5, -1.3, -5);
       sword.rotation.set(0.5, 0, 1);
 
       camera.add(sword);
@@ -885,37 +885,101 @@ const updateHearts = (health) => {
 
 // Example usage: updateHearts(5); // Display 5 filled hearts
 
-const cubes = {};
+const playerModels = {};
 
-// Function to create a cube for a player
-function createCube(playerId) {
-  const geometry = new THREE.BoxGeometry();
-  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
-  const cube = new THREE.Mesh(geometry, material);
-  scene.add(cube);
-  cubes[playerId] = cube;
+function createPlayerModel(playerId) {
+  const geometry = new THREE.BoxGeometry(2, 4, 1);
+
+  // Load textures for each side of the cube
+  const textureLoader = new THREE.TextureLoader();
+  const textureFront = textureLoader.load("./textures/steev-front.png");
+  const textureBack = textureLoader.load("./textures/steev-back.png");
+  const textureLeft = textureLoader.load("./textures/steev-left.png");
+  const textureRight = textureLoader.load("./textures/steev-right.png");
+  const textureTop = textureLoader.load("./textures/steev-top.png");
+  const textureBottom = textureLoader.load("./textures/nothing.png");
+
+  // Create materials for each face
+  const materials = [
+    new THREE.MeshBasicMaterial({
+      map: textureLeft,
+      side: THREE.DoubleSide,
+      transparent: true,
+    }),
+    new THREE.MeshBasicMaterial({
+      map: textureRight,
+      side: THREE.DoubleSide,
+      transparent: true,
+    }),
+    new THREE.MeshBasicMaterial({
+      map: textureTop,
+      side: THREE.DoubleSide,
+      transparent: true,
+    }),
+    new THREE.MeshBasicMaterial({
+      map: textureBottom,
+      side: THREE.DoubleSide,
+      transparent: true,
+    }),
+    new THREE.MeshBasicMaterial({
+      map: textureBack,
+      side: THREE.DoubleSide,
+      transparent: true,
+    }),
+    new THREE.MeshBasicMaterial({
+      map: textureFront,
+      side: THREE.DoubleSide,
+      transparent: true,
+    }),
+  ];
+
+  const playerModel = new THREE.Mesh(geometry, materials);
+  scene.add(playerModel);
+  playerModels[playerId] = playerModel;
 }
 
-// Function to update the position of a cube
-function updateCubePosition(playerId, position) {
-  const cube = cubes[playerId];
-  if (cube) {
-    cube.position.set(position.x, position.y, position.z);
+function updatePlayerModelPosition(playerId, position) {
+  const playerModel = playerModels[playerId];
+  if (playerModel) {
+    playerModel.position.set(position.x, position.y, position.z);
   }
 }
 
-// Handle new player joining
-socket.on("updatePlayers", (players) => {
-  for (const playerId in players) {
-    if (!cubes[playerId]) {
-      createCube(playerId);
-    }
-    updateCubePosition(playerId, players[playerId].position);
+function setPlayerModelVisibility(playerId, isVisible) {
+  const playerModel = playerModels[playerId];
+  if (playerModel) {
+    playerModel.material.forEach((material, index) => {
+      material.alphaTest = 0.5;
+      if (index < 6) {
+        // Assuming the player model has 6 materials (adjust if needed)
+        material.opacity = isVisible ? 1 : 0; // 1 for visible, 0 for invisible
+        material.transparent = true; // Make sure transparency is enabled
+      }
+    });
+  }
+}
+
+socket.on("playerDisconnect", (disconnectedPlayerId) => {
+  const disconnectedPlayerModel = playerModels[disconnectedPlayerId];
+  if (disconnectedPlayerModel) {
+    scene.remove(disconnectedPlayerModel);
+    delete playerModels[disconnectedPlayerId];
   }
 });
 
-// Handle player movement (assumes you have a function to update player position)
+socket.on("updatePlayers", (players) => {
+  for (const playerId in players) {
+    if (!playerModels[playerId]) {
+      createPlayerModel(playerId);
+    }
+    updatePlayerModelPosition(playerId, players[playerId].position);
+
+    // Check if the player is the current player (belonging to the current socket)
+    const isCurrentPlayer = playerId === socket.id;
+    setPlayerModelVisibility(playerId, !isCurrentPlayer);
+  }
+});
+
 function onPlayerMove(position) {
-  // Update player position on the server
   socket.emit("playerMove", { id: socket.id, position });
 }
