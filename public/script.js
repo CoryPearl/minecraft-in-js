@@ -1,8 +1,12 @@
-//make player modle other players can see
-//arm dosnt go through floor
+//make player modle a actual modle nota  square
+//player modle not visible to player whos modle it is
+//ask for name on page load then put that above head and sue for chat
+//real time chat that cleares on server restart but saves until then
+//sword dosnt go through floor
 //make zombie with noises
 //fix block breaking
 //make it so when trees and rocks are detsoryed they save
+//minecraft soundtrack in bacground
 
 import * as THREE from "./modules/three.module.js";
 import { PointerLockControls } from "./modules/PointerLookControls.js";
@@ -70,8 +74,8 @@ const createSandTile = (position, size) => {
   groundTexture.wrapS = THREE.RepeatWrapping;
   groundTexture.wrapT = THREE.RepeatWrapping;
   groundTexture.repeat.set(
-    size.width / (size.width / 2),
-    size.height / (size.height / 2)
+    size.width / 2.5, // Adjust the tiling based on your preference
+    size.height / 2.5
   );
 
   const groundMaterial = new THREE.MeshBasicMaterial({
@@ -82,6 +86,7 @@ const createSandTile = (position, size) => {
   const ground = new THREE.Mesh(groundGeometry, groundMaterial);
   ground.rotation.x = -Math.PI / 2;
   ground.position.set(position.x, position.y, position.z);
+
   scene.add(ground);
 };
 
@@ -222,8 +227,7 @@ const createCubeCluster = (position) => {
   }
 };
 
-// Placeholder for  arm
-const armGeometry = new THREE.BoxGeometry(0.5, 0.5, -5);
+const armGeometry = new THREE.BoxGeometry(0.5, 0.5, -3.5);
 const armMaterial = new THREE.MeshBasicMaterial({ color: 0xa97d64 });
 const armMesh = new THREE.Mesh(armGeometry, armMaterial);
 armMesh.position.set(2, -2, -5);
@@ -249,22 +253,22 @@ document.addEventListener("mousedown", (event) => {
 });
 
 const moveSword = () => {
-  sword.position.set(3.3, -0.5, -7);
-  sword.rotation.set(0.3, 0, 1.1);
+  sword.position.set(3.5, -1.3, -5);
+  sword.rotation.set(0.3, 0, 1.2);
   setTimeout(() => {
     resetSwordPosition();
   }, 100);
 };
 
 const resetSwordPosition = () => {
-  sword.position.set(3.3, -0.25, -5);
+  sword.position.set(3.5, -1.3, -5);
   sword.rotation.set(0.5, 0, 1);
 };
 
 const updateArmPosition = () => {
   if (isHitting) {
     armMesh.rotation.set(0, 0, 0);
-    armMesh.position.set(2, -1, -4);
+    armMesh.position.set(2, -1, -1.15);
   } else {
     armMesh.rotation.set(0.5, 3, 0);
     armMesh.position.set(2, -2, -1);
@@ -408,6 +412,13 @@ const animate = function () {
   updateCoordinates();
 
   const playerPosition = controls.getObject().position;
+  const newPosition = new THREE.Vector3();
+
+  newPosition.copy(playerPosition); // Set the new position based on your logic
+
+  // Call onPlayerMove to send the updated position to the server
+  onPlayerMove(newPosition);
+
   const halfGroundSize = groundSize / 2;
 
   if (playerPosition.x < -halfGroundSize) playerPosition.x = -halfGroundSize;
@@ -647,7 +658,7 @@ const swordMaterial = new THREE.MeshBasicMaterial({
   color: 0x73c2fb,
 });
 const sword = new THREE.Mesh(swordGeometry, swordMaterial);
-sword.position.set(3.3, -0.25, -5);
+sword.position.set(3.5, -1.3, -5);
 sword.rotation.set(0.5, 0, 1);
 
 camera.add(sword);
@@ -814,7 +825,6 @@ const destroyCubeOnLeftClick = (event) => {
 
 // Function to handle cube destruction on the server side
 socket.on("destroyBlock", (destroyData) => {
-  // Your server-side logic to update the block list
   updateBlockList(destroyData.position);
 });
 
@@ -874,3 +884,38 @@ const updateHearts = (health) => {
 };
 
 // Example usage: updateHearts(5); // Display 5 filled hearts
+
+const cubes = {};
+
+// Function to create a cube for a player
+function createCube(playerId) {
+  const geometry = new THREE.BoxGeometry();
+  const material = new THREE.MeshBasicMaterial({ color: 0x00ff00 });
+  const cube = new THREE.Mesh(geometry, material);
+  scene.add(cube);
+  cubes[playerId] = cube;
+}
+
+// Function to update the position of a cube
+function updateCubePosition(playerId, position) {
+  const cube = cubes[playerId];
+  if (cube) {
+    cube.position.set(position.x, position.y, position.z);
+  }
+}
+
+// Handle new player joining
+socket.on("updatePlayers", (players) => {
+  for (const playerId in players) {
+    if (!cubes[playerId]) {
+      createCube(playerId);
+    }
+    updateCubePosition(playerId, players[playerId].position);
+  }
+});
+
+// Handle player movement (assumes you have a function to update player position)
+function onPlayerMove(position) {
+  // Update player position on the server
+  socket.emit("playerMove", { id: socket.id, position });
+}

@@ -16,6 +16,7 @@ app.get("/", (req, res) => {
 });
 
 const blockData = [];
+const players = {};
 
 io.on("connection", (socket) => {
   console.log("A user connected");
@@ -30,8 +31,6 @@ io.on("connection", (socket) => {
 
   // Handle block placement and update the in-memory list
   socket.on("placeBlock", (newBlockData) => {
-    // Your placement logic here...
-
     // Add the new block data to the in-memory list
     blockData.push(newBlockData);
 
@@ -39,7 +38,23 @@ io.on("connection", (socket) => {
     io.emit("updateBlockData", blockData);
   });
 
-  // ... other socket events
+  // Handle new player joining
+  socket.on("newPlayer", (playerData) => {
+    players[socket.id] = playerData;
+    io.emit("updatePlayers", players);
+  });
+
+  // Handle player movement
+  socket.on("playerMove", (playerData) => {
+    players[socket.id] = playerData;
+    io.emit("updatePlayers", players);
+  });
+
+  // Handle player disconnect
+  socket.on("disconnect", () => {
+    delete players[socket.id];
+    io.emit("updatePlayers", players);
+  });
 });
 
 const handleBlockDestruction = (destroyData) => {
@@ -65,7 +80,7 @@ const cloudData = [];
 
 const generateClouds = () => {
   const clouds = [];
-  const gridSize = 1000; // Set your desired gridSize
+  const gridSize = 1000;
   const gridSizeFactor = Math.ceil(gridSize / 100);
   const cloudCount = 20 * gridSizeFactor;
 
@@ -137,8 +152,6 @@ app.get("/tree-data", (req, res) => {
 });
 
 //sand
-
-// Function to generate sand data (positions)
 const generateSandData = () => {
   const sand = [];
   for (let i = 0; i < 20; i++) {
@@ -158,6 +171,8 @@ const sandData = generateSandData();
 app.get("/sand-data", (req, res) => {
   res.json(sandData);
 });
+
+//rocks
 const generateCubeClusterData = () => {
   const cubeClusters = [];
   for (let i = 0; i < 100; i++) {
