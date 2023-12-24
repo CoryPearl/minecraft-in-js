@@ -17,6 +17,7 @@ app.get("/", (req, res) => {
 
 const blockData = [];
 const players = {};
+const playerNames = {};
 
 io.on("connection", (socket) => {
   console.log("A user connected");
@@ -38,12 +39,6 @@ io.on("connection", (socket) => {
     io.emit("updateBlockData", blockData);
   });
 
-  // Handle new player joining
-  socket.on("newPlayer", (playerData) => {
-    players[socket.id] = playerData;
-    io.emit("updatePlayers", players);
-  });
-
   // Handle player movement
   socket.on("playerMove", (playerData) => {
     const { position, rotation } = playerData;
@@ -53,14 +48,27 @@ io.on("connection", (socket) => {
 
   // Handle player disconnect
   socket.on("disconnect", () => {
-    delete players[socket.id];
+    const playerId = socket.id;
+    const playerName = playerNames[playerId];
+    delete players[playerId];
+    delete playerNames[playerId];
     io.emit("updatePlayers", players);
-    io.emit("playerDisconnect", socket.id);
+    io.emit("playerDisconnect", playerId);
+
+    io.emit("disconnectMessage", playerName);
+  });
+  socket.on("getName", (name) => {
+    playerNames[socket.id] = name;
+    io.emit("connectMessage", name);
+  });
+
+  socket.on("sendNames", () => {
+    const namesList = Object.values(playerNames);
+    socket.emit("namesList2", namesList);
   });
 });
 
 const handleBlockDestruction = (destroyData) => {
-  // Find and remove the destroyed block from the blockData array
   const index = blockData.findIndex(
     (block) =>
       block.position.x === destroyData.position.x &&

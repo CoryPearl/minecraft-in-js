@@ -80,3 +80,36 @@ body {
   margin: 0px;
   padding: 0px;
 }
+
+#chat {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  border-radius: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  height: 600px;
+  width: 500px;
+  visibility: hidden;
+}
+
+#message {
+  position: absolute;
+  padding: 0px;
+  margin: 0px;
+  color: white;
+  width: 100%;
+  text-align: center;
+  font-size: 50px;
+}
+
+#online {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  border-radius: 20px;
+  background-color: rgba(0, 0, 0, 0.5);
+  height: 300px;
+  width: 500px;
+  visibility: hidden;
+}

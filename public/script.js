@@ -1,16 +1,13 @@
-//playermodle rotates
-//make control w not close tab
-//ask for name on page load then put that above head and use for chat
-//when player diconects chat says "name" disconcted
+//put name above head
 //real time chat that cleares on server restart but saves until then
-//sword dosnt go through floor
+//fix block breaking, dosnt wwork usualy and when it does it dosnt happen on other games
 //make zombie with noises
-//fix block breaking
 //make it so when trees and rocks are detsoryed they save
 //minecraft soundtrack in bacground
 
 import * as THREE from "./modules/three.module.js";
 import { PointerLockControls } from "./modules/PointerLookControls.js";
+import { TextGeometry } from "./modules/TextGemometry.js";
 const scene = new THREE.Scene();
 const socket = io();
 const camera = new THREE.PerspectiveCamera(
@@ -21,11 +18,22 @@ const camera = new THREE.PerspectiveCamera(
 );
 let flightMode = false;
 
+var name;
+function askForName() {
+  name = prompt("Please enter your name:");
+  if (name !== null) {
+    //do stuff with name
+    socket.emit("getName", name);
+  } else {
+    askForName();
+  }
+}
+askForName();
+
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
 document.body.appendChild(renderer.domElement);
 
-// Create a large ground plane with repeated texture
 const groundSize = 1000;
 const gridSize = 100;
 const tileWidth = 2.5;
@@ -54,14 +62,44 @@ scene.add(ground);
 fetch("/sand-data")
   .then((response) => response.json())
   .then((sandData) => {
-    // Create sand tiles based on the received positions and sizes
     sandData.forEach((data) => {
       createSandTile(data.position, data.size);
     });
   })
   .catch((error) => console.error("Error fetching initial sand data:", error));
 
-// Function to create a sand tile
+document.addEventListener("keydown", (event) => {
+  if (
+    event.key === "t" &&
+    document.getElementById("chat").style.visibility == ""
+  ) {
+    document.getElementById("chat").style.visibility = "visible";
+  } else if (
+    event.key === "t" &&
+    document.getElementById("chat").style.visibility == "visible"
+  ) {
+    document.getElementById("chat").style.visibility = "";
+  }
+});
+
+socket.on("disconnectMessage", (disconnectedPlayerName) => {
+  document.getElementById(
+    "message"
+  ).innerText = `${disconnectedPlayerName} has disconnected!`;
+
+  setTimeout(() => {
+    document.getElementById("message").innerText = "";
+  }, 2000);
+});
+
+socket.on("connectMessage", (playerName) => {
+  document.getElementById("message").innerText = `${playerName} has connected!`;
+
+  setTimeout(() => {
+    document.getElementById("message").innerText = "";
+  }, 2000);
+});
+
 const createSandTile = (position, size) => {
   const groundGeometry = new THREE.PlaneGeometry(
     size.width,
@@ -74,10 +112,7 @@ const createSandTile = (position, size) => {
   const groundTexture = textureLoader.load("./textures/sand.png");
   groundTexture.wrapS = THREE.RepeatWrapping;
   groundTexture.wrapT = THREE.RepeatWrapping;
-  groundTexture.repeat.set(
-    size.width / 2.5, // Adjust the tiling based on your preference
-    size.height / 2.5
-  );
+  groundTexture.repeat.set(size.width / 2.5, size.height / 2.5);
 
   const groundMaterial = new THREE.MeshBasicMaterial({
     map: groundTexture,
@@ -99,16 +134,14 @@ const cloudMaterial = new THREE.MeshBasicMaterial({
   opacity: 0.8,
 });
 
-// Assume you have a function to create clouds similar to your original createCloud function
 const createCloud = (cloudPosition, cloudSize) => {
   const cloudGeometry = new THREE.PlaneGeometry(cloudSize.x, cloudSize.y);
   const cloud = new THREE.Mesh(cloudGeometry, cloudMaterial);
   cloud.position.copy(cloudPosition);
-  cloud.rotation.x = Math.PI / 2; // Rotate the cloud to be horizontal
+  cloud.rotation.x = Math.PI / 2;
   scene.add(cloud);
 };
 
-// Fetch initial cloud data from the server
 fetch("/initialCloudData")
   .then((response) => response.json())
   .then((clouds) => {
@@ -133,13 +166,12 @@ const sunMaterial = new THREE.MeshBasicMaterial({
 });
 const sunMesh = new THREE.Mesh(sunGeometry, sunMaterial);
 sunMesh.position.set(0, 200, 0);
-sunMesh.rotation.x = Math.PI / 2; // Rotate the sun to be horizontal
+sunMesh.rotation.x = Math.PI / 2;
 scene.add(sunMesh);
 
 fetch("/cube-cluster-data")
   .then((response) => response.json())
   .then((cubeClusterData) => {
-    // Create cube clusters based on the received positions
     cubeClusterData.forEach((data) => {
       createCubeCluster(data.position);
     });
@@ -306,34 +338,67 @@ const createLargerMinecraftTree = (position) => {
 fetch("/tree-data")
   .then((response) => response.json())
   .then((treeData) => {
-    // Create trees based on the received positions
     treeData.forEach((position) => {
       createLargerMinecraftTree(position);
     });
   })
   .catch((error) => console.error("Error fetching initial tree data:", error));
 
-// Handle window resize
 window.addEventListener("resize", () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
 
-// Handle user input for movement and rotation
 const controls = new PointerLockControls(camera, renderer.domElement);
 document.addEventListener("click", () => {
   controls.lock();
 });
 scene.add(controls.getObject());
 
-// Handle keyboard input for movement
 const keys = {};
 let canJump = true;
 let isCrouching = false;
 
+function tabMenu() {
+  document.getElementById("online").textContent = "";
+  if (document.getElementById("online").style.visibility == "") {
+    console.log("test");
+    socket.emit("sendNames");
+    document.getElementById("online").style.visibility = "visible";
+  } else if (document.getElementById("online").style.visibility == "visible") {
+    document.getElementById("online").style.visibility = "";
+  }
+}
+
+socket.on("namesList2", (namesList) => {
+  const online = document.createElement("p");
+  online.textContent = "Online Players:";
+  online.style.textAlign = "center";
+  online.style.color = "white";
+  online.style.fontSize = "30px";
+  online.style.margin = "5px";
+  online.style.padding = "0px";
+  document.getElementById("online").appendChild(online);
+  namesList.forEach((name) => {
+    const onlineName = document.createElement("p");
+    onlineName.textContent = name;
+    onlineName.style.textAlign = "center";
+    onlineName.style.color = "white";
+    onlineName.style.fontSize = "20px";
+    onlineName.style.margin = "5px";
+    onlineName.style.padding = "0px";
+    document.getElementById("online").appendChild(onlineName);
+  });
+});
+
 const onKeyDown = (event) => {
   keys[event.code] = true;
+
+  if (event.key === "Tab") {
+    event.preventDefault();
+    tabMenu();
+  }
 
   if (event.code === "KeyF" && flightMode) {
     flightMode = false;
@@ -415,10 +480,13 @@ const animate = function () {
   const playerPosition = controls.getObject().position;
   const newPosition = new THREE.Vector3();
 
-  newPosition.copy(playerPosition); // Set the new position based on your logic
+  newPosition.copy(playerPosition);
 
-  // Call onPlayerMove to send the updated position to the server
-  onPlayerMove(newPosition);
+  const playerRotation = controls.getObject().rotation;
+  const newRotation = new THREE.Euler();
+  newRotation.copy(playerRotation);
+
+  onPlayerMove(newPosition, newRotation);
 
   const halfGroundSize = groundSize / 2;
 
@@ -763,7 +831,6 @@ const calculateCubePosition = () => {
 };
 
 socket.on("updateCubes", (cubeData) => {
-  // Create a cube on each client based on the received data
   const cubeMaterial = new THREE.MeshBasicMaterial({
     map: new THREE.TextureLoader().load(cubeData.texturePath),
     color: color,
@@ -781,13 +848,10 @@ const getIntersects = (clientX, clientY) => {
   mouse.x = (clientX / window.innerWidth) * 2 - 1;
   mouse.y = -(clientY / window.innerHeight) * 2 + 1;
 
-  // Set up the raycaster
   raycaster.setFromCamera(mouse, camera);
 
-  // Increase the far property to extend the destruction distance
-  raycaster.far = 100; // Adjust the value as needed
+  raycaster.far = 100;
 
-  // Check for intersections with cubes
   const intersects = raycaster.intersectObjects(scene.children, true);
 
   return intersects;
@@ -809,10 +873,8 @@ const destroyCubeOnLeftClick = (event) => {
         intersects[0].object.geometry.parameters.height === 1.5 &&
         intersects[0].object.geometry.parameters.depth === 1.5
       ) {
-        // Remove the cube from the scene
         scene.remove(selectedObject.object);
 
-        // Emit a message to the server indicating cube destruction
         const cubePosition = selectedObject.object.position;
         if (cubePosition) {
           const audio = new Audio("./textures/place.mp3");
@@ -823,15 +885,11 @@ const destroyCubeOnLeftClick = (event) => {
     }
   }
 };
-
-// Function to handle cube destruction on the server side
 socket.on("destroyBlock", (destroyData) => {
   updateBlockList(destroyData.position);
 });
 
-// Function to update the block list on the server side
 const updateBlockList = (destroyedPosition) => {
-  // Find and remove the cube from the blockData array
   const index = blockData.findIndex(
     (block) =>
       block.position.x === destroyedPosition.x &&
@@ -841,7 +899,6 @@ const updateBlockList = (destroyedPosition) => {
   if (index !== -1) {
     blockData.splice(index, 1);
 
-    // Emit the updated block data to all clients
     io.emit("updateBlockData", blockData);
   }
 };
@@ -891,16 +948,14 @@ const playerModels = {};
 function createPlayerModel(playerId) {
   const geometry = new THREE.BoxGeometry(2, 4, 1);
 
-  // Load textures for each side of the cube
   const textureLoader = new THREE.TextureLoader();
   const textureFront = textureLoader.load("./textures/steev-front.png");
   const textureBack = textureLoader.load("./textures/steev-back.png");
-  const textureLeft = textureLoader.load("./textures/steev-left.png");
-  const textureRight = textureLoader.load("./textures/steev-right.png");
+  const textureLeft = textureLoader.load("./textures/steev-right.png");
+  const textureRight = textureLoader.load("./textures/steev-left.png");
   const textureTop = textureLoader.load("./textures/steev-top.png");
   const textureBottom = textureLoader.load("./textures/nothing.png");
 
-  // Create materials for each face
   const materials = [
     new THREE.MeshBasicMaterial({
       map: textureLeft,
@@ -936,6 +991,7 @@ function createPlayerModel(playerId) {
 
   const playerModel = new THREE.Mesh(geometry, materials);
   scene.add(playerModel);
+
   playerModels[playerId] = playerModel;
 }
 
@@ -946,15 +1002,21 @@ function updatePlayerModelPosition(playerId, position) {
   }
 }
 
+function updatePlayerModelRotation(playerId, rotation) {
+  const playerModel = playerModels[playerId];
+  if (playerModel) {
+    playerModel.rotation.set(rotation._x, rotation._y, rotation._z);
+  }
+}
+
 function setPlayerModelVisibility(playerId, isVisible) {
   const playerModel = playerModels[playerId];
   if (playerModel) {
     playerModel.material.forEach((material, index) => {
       material.alphaTest = 0.5;
       if (index < 6) {
-        // Assuming the player model has 6 materials (adjust if needed)
-        material.opacity = isVisible ? 1 : 0; // 1 for visible, 0 for invisible
-        material.transparent = true; // Make sure transparency is enabled
+        material.opacity = isVisible ? 1 : 0;
+        material.transparent = true;
       }
     });
   }
@@ -974,20 +1036,12 @@ socket.on("updatePlayers", (players) => {
       createPlayerModel(playerId);
     }
     updatePlayerModelPosition(playerId, players[playerId].position);
-
-    // Check if the player is the current player (belonging to the current socket)
+    updatePlayerModelRotation(playerId, players[playerId].rotation);
     const isCurrentPlayer = playerId === socket.id;
     setPlayerModelVisibility(playerId, !isCurrentPlayer);
   }
 });
 
-function onPlayerMove(position) {
-  socket.emit("playerMove", { id: socket.id, position });
+function onPlayerMove(position, rotation) {
+  socket.emit("playerMove", { id: socket.id, position, rotation });
 }
-
-//does not work
-window.addEventListener("keydown", function (e) {
-  if ((e.ctrlKey || e.metaKey) && e.key === "w") {
-    e.preventDefault();
-  }
-});
