@@ -1,6 +1,7 @@
-//put name above head
-//real time chat that cleares on server restart but saves until then
 //fix block breaking, dosnt wwork usualy and when it does it dosnt happen on other games
+//real time chat that cleares on server restart but saves until then
+//if chat is open no other keys work
+//chat closes on sec and on send message
 //make zombie with noises
 //make it so when trees and rocks are detsoryed they save
 //minecraft soundtrack in bacground
@@ -8,6 +9,7 @@
 import * as THREE from "./modules/three.module.js";
 import { PointerLockControls } from "./modules/PointerLookControls.js";
 import { TextGeometry } from "./modules/TextGemometry.js";
+import { FontLoader } from "./modules/Fontoader.js";
 const scene = new THREE.Scene();
 const socket = io();
 const camera = new THREE.PerspectiveCamera(
@@ -941,11 +943,9 @@ const updateHearts = (health) => {
   }
 };
 
-// Example usage: updateHearts(5); // Display 5 filled hearts
-
 const playerModels = {};
 
-function createPlayerModel(playerId) {
+function createPlayerModel(playerId, playerName) {
   const geometry = new THREE.BoxGeometry(2, 4, 1);
 
   const textureLoader = new THREE.TextureLoader();
@@ -990,6 +990,30 @@ function createPlayerModel(playerId) {
   ];
 
   const playerModel = new THREE.Mesh(geometry, materials);
+
+  const fontLoader = new FontLoader();
+  fontLoader.load("./modules/font.json", function (font) {
+    const textGeometry = new TextGeometry(playerName, {
+      font: font,
+      size: 0.5,
+      height: 0.1,
+    });
+
+    const textMaterial = new THREE.MeshBasicMaterial({
+      color: 0xffffff,
+    });
+
+    textGeometry.computeBoundingBox();
+    const textWidth =
+      textGeometry.boundingBox.max.x - textGeometry.boundingBox.min.x;
+    textGeometry.translate(-textWidth / 2, 0, 0);
+
+    const textMesh = new THREE.Mesh(textGeometry, textMaterial);
+    textMesh.position.set(0, 3, 0);
+    textMesh.rotation.y = THREE.MathUtils.degToRad(900);
+    playerModel.add(textMesh);
+  });
+
   scene.add(playerModel);
 
   playerModels[playerId] = playerModel;
@@ -1032,8 +1056,9 @@ socket.on("playerDisconnect", (disconnectedPlayerId) => {
 
 socket.on("updatePlayers", (players) => {
   for (const playerId in players) {
+    const playerName = players[playerId].name; // Assuming you have a 'name' property in the player data
     if (!playerModels[playerId]) {
-      createPlayerModel(playerId);
+      createPlayerModel(playerId, playerName);
     }
     updatePlayerModelPosition(playerId, players[playerId].position);
     updatePlayerModelRotation(playerId, players[playerId].rotation);
@@ -1041,7 +1066,6 @@ socket.on("updatePlayers", (players) => {
     setPlayerModelVisibility(playerId, !isCurrentPlayer);
   }
 });
-
 function onPlayerMove(position, rotation) {
   socket.emit("playerMove", { id: socket.id, position, rotation });
 }

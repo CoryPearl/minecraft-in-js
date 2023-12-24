@@ -42,7 +42,8 @@ io.on("connection", (socket) => {
   // Handle player movement
   socket.on("playerMove", (playerData) => {
     const { position, rotation } = playerData;
-    players[socket.id] = { position, rotation };
+    const name = playerNames[socket.id];
+    players[socket.id] = { position, rotation, name };
     io.emit("updatePlayers", players);
   });
 

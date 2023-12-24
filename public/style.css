@@ -92,6 +92,20 @@ body {
   visibility: hidden;
 }
 
+#input {
+  position: absolute;
+  border: none;
+  box-shadow: 0 0 15px 4px rgba(0, 0, 0, 0.45);
+  background-color: transparent;
+  border-radius: 20px;
+  padding: 5px;
+  top: 97.5%;
+  left: 50%;
+  transform: translate(-50%, -100%);
+  width: 400px;
+  color: white;
+}
+
 #message {
   position: absolute;
   padding: 0px;
