@@ -1,7 +1,6 @@
-//real time chat that cleares on server restart but saves until then and chat closes on esc (ignore event default) and on send message
 //make able to attck other players and loose 1 heart each hit then regen over time, do 2 hearts when sword is out
-//fix block breaking, dosnt wwork usualy and when it does it dosnt happen on other games
-//make it so when trees and rocks are detsoryed they save
+//make block break register to everyone
+//remove unessecary comments
 
 import * as THREE from "./modules/three.module.js";
 import { PointerLockControls } from "./modules/PointerLookControls.js";
@@ -30,13 +29,37 @@ var name;
 function askForName() {
   name = prompt("Please enter your name:");
   if (name !== null) {
-    //do stuff with name
     socket.emit("getName", name);
   } else {
     askForName();
   }
 }
 askForName();
+
+function send() {
+  const messagePart1 = document.getElementById("input").value;
+  document.getElementById("input").value = "";
+  const message = name + ": " + messagePart1;
+  socket.emit("chat message", message);
+}
+
+socket.on("chatmessage", (msg) => {
+  const messageNode = document.createElement("p");
+  messageNode.textContent = msg;
+  messageNode.style.color = "white";
+  messageNode.style.margin = "0px";
+  messageNode.style.padding = "5px";
+  document.getElementById("chats").appendChild(messageNode);
+});
+
+document.addEventListener("keydown", function (event) {
+  if (
+    event.key === "Enter" &&
+    document.getElementById("chat").style.visibility == "visible"
+  ) {
+    send();
+  }
+});
 
 const renderer = new THREE.WebGLRenderer();
 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -83,9 +106,10 @@ document.addEventListener("keydown", (event) => {
   ) {
     document.getElementById("chat").style.visibility = "visible";
   } else if (
-    event.key === "t" &&
+    event.key === "Escape" &&
     document.getElementById("chat").style.visibility == "visible"
   ) {
+    event.preventDefault();
     document.getElementById("chat").style.visibility = "";
   }
 });
@@ -371,7 +395,6 @@ let isCrouching = false;
 function tabMenu() {
   document.getElementById("online").textContent = "";
   if (document.getElementById("online").style.visibility == "") {
-    console.log("test");
     socket.emit("sendNames");
     document.getElementById("online").style.visibility = "visible";
   } else if (document.getElementById("online").style.visibility == "visible") {
@@ -431,7 +454,8 @@ const onKeyDown = (event) => {
   if (
     event.code === "Space" &&
     canJump &&
-    controls.getObject().position.y < 4
+    controls.getObject().position.y < 4 &&
+    document.getElementById("chat").style.visibility == ""
   ) {
     controls.getObject().position.y += 0.5;
     verticalVelocity = jumpSpeed;
@@ -831,7 +855,7 @@ const placeCubeOnRightClick = (event) => {
 
       const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
       cube.position.copy(cubePosition);
-      scene.add(cube);
+      // scene.add(cube);
       socket.emit("placeBlock", {
         position: cubePosition,
         texturePath: cubeTexturePath,
@@ -874,7 +898,7 @@ const getIntersects = (clientX, clientY) => {
 
   raycaster.setFromCamera(mouse, camera);
 
-  raycaster.far = 100;
+  raycaster.far = 1;
 
   const intersects = raycaster.intersectObjects(scene.children, true);
 
@@ -906,6 +930,13 @@ const destroyCubeOnLeftClick = (event) => {
         }
         socket.emit("destroyBlock", { position: cubePosition });
       }
+      // if (
+      //   //for hitting another players
+      //   intersects.length > 0 &&
+      //   intersects[0].object instanceof THREE.Mesh
+      // ) {
+      //   console.log(selectedObject);
+      // }
     }
   }
 };
@@ -1072,7 +1103,7 @@ socket.on("playerDisconnect", (disconnectedPlayerId) => {
 
 socket.on("updatePlayers", (players) => {
   for (const playerId in players) {
-    const playerName = players[playerId].name; // Assuming you have a 'name' property in the player data
+    const playerName = players[playerId].name;
     if (!playerModels[playerId]) {
       createPlayerModel(playerId, playerName);
     }

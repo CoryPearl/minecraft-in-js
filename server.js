@@ -22,6 +22,10 @@ const playerNames = {};
 io.on("connection", (socket) => {
   console.log("A user connected");
 
+  socket.on("chat message", (msg) => {
+    io.emit("chatmessage", msg);
+  });
+
   // Load block data for the connected client
   socket.emit("initialBlockData", blockData);
 

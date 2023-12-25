@@ -92,6 +92,17 @@ body {
   visibility: hidden;
 }
 
+#chats {
+  position: absolute;
+  width: 500px;
+  height: 550px;
+  border-radius: 20px;
+  display: flex;
+  flex-direction: column;
+  /* overflow-y: scroll; */
+  justify-content: end;
+}
+
 #input {
   position: absolute;
   border: none;
