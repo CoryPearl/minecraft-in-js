@@ -127,3 +127,10 @@ body {
   width: 500px;
   visibility: hidden;
 }
+
+#mute {
+  position: absolute;
+  width: 75px;
+  bottom: 5px;
+  right: 5px;
+}

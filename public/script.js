@@ -1,10 +1,9 @@
 //fix block breaking, dosnt wwork usualy and when it does it dosnt happen on other games
 //real time chat that cleares on server restart but saves until then
 //if chat is open no other keys work
-//chat closes on sec and on send message
-//make zombie with noises
+//chat closes on esc (ignore event default) and on send message
+//make able to attck other players
 //make it so when trees and rocks are detsoryed they save
-//minecraft soundtrack in bacground
 
 import * as THREE from "./modules/three.module.js";
 import { PointerLockControls } from "./modules/PointerLookControls.js";
@@ -19,6 +18,16 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 let flightMode = false;
+
+let muted = false;
+
+const backgroundSound = new Audio("./textures/soundTrack.mp3");
+
+function pageClickHandler() {
+  backgroundSound.play();
+}
+
+document.addEventListener("click", pageClickHandler);
 
 var name;
 function askForName() {
@@ -396,6 +405,20 @@ socket.on("namesList2", (namesList) => {
 
 const onKeyDown = (event) => {
   keys[event.code] = true;
+
+  if (event.key === "m") {
+    if (muted == false) {
+      muted = true;
+      backgroundSound.muted = true;
+      backgroundSound.pause();
+      document.getElementById("mute").src = "./textures/mute.png";
+    } else if (muted == true) {
+      muted = false;
+      backgroundSound.muted = false;
+      backgroundSound.play();
+      document.getElementById("mute").src = "./textures/unmute.png";
+    }
+  }
 
   if (event.key === "Tab") {
     event.preventDefault();
@@ -793,7 +816,9 @@ const placeCubeOnRightClick = (event) => {
     var cubeMaterial;
     if (activeSlot != 0) {
       const audio = new Audio("./textures/place.mp3");
-      audio.play();
+      if (muted == false) {
+        audio.play();
+      }
       if (activeSlot == 8) {
         cubeMaterial = new THREE.MeshBasicMaterial({
           map: new THREE.TextureLoader().load(cubeTexturePath),
