@@ -27,7 +27,7 @@ io.on("connection", (socket) => {
 
   socket.on("destroyBlock", (destroyData) => {
     // Handle block destruction on the server side
-    handleBlockDestruction(destroyData);
+    handleBlockDestruction(socket, destroyData);
   });
 
   // Handle block placement and update the in-memory list
@@ -69,7 +69,7 @@ io.on("connection", (socket) => {
   });
 });
 
-const handleBlockDestruction = (destroyData) => {
+const handleBlockDestruction = (socket, destroyData) => {
   const index = blockData.findIndex(
     (block) =>
       block.position.x === destroyData.position.x &&
@@ -78,10 +78,17 @@ const handleBlockDestruction = (destroyData) => {
   );
 
   if (index !== -1) {
-    blockData.splice(index, 1);
+    // Remove the block from the server-side data
+    const destroyedBlock = blockData.splice(index, 1)[0];
 
-    // Emit the updated block data to all clients
-    io.emit("updateBlockData", blockData);
+    // Emit the updated block data to all clients except the sender
+    socket.broadcast.emit("updateBlockData", blockData);
+
+    // Send the destroyed block information to all clients (including the sender)
+    io.emit("destroyedBlock", { position: destroyedBlock.position });
+
+    // You may want to emit the updated block data to the sender as well
+    // io.to(socket.id).emit("updateBlockData", blockData);
   }
 };
 

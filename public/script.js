@@ -1,8 +1,6 @@
+//real time chat that cleares on server restart but saves until then and chat closes on esc (ignore event default) and on send message
+//make able to attck other players and loose 1 heart each hit then regen over time, do 2 hearts when sword is out
 //fix block breaking, dosnt wwork usualy and when it does it dosnt happen on other games
-//real time chat that cleares on server restart but saves until then
-//if chat is open no other keys work
-//chat closes on esc (ignore event default) and on send message
-//make able to attck other players
 //make it so when trees and rocks are detsoryed they save
 
 import * as THREE from "./modules/three.module.js";
@@ -18,7 +16,6 @@ const camera = new THREE.PerspectiveCamera(
   1000
 );
 let flightMode = false;
-
 let muted = false;
 
 const backgroundSound = new Audio("./textures/soundTrack.mp3");
@@ -912,23 +909,17 @@ const destroyCubeOnLeftClick = (event) => {
     }
   }
 };
-socket.on("destroyBlock", (destroyData) => {
-  updateBlockList(destroyData.position);
-});
 
-const updateBlockList = (destroyedPosition) => {
-  const index = blockData.findIndex(
-    (block) =>
-      block.position.x === destroyedPosition.x &&
-      block.position.y === destroyedPosition.y &&
-      block.position.z === destroyedPosition.z
+socket.on("destroyedBlock", (destroyedBlockData) => {
+  // Find and remove the corresponding block from the client-side scene
+  const destroyedBlock = scene.getObjectByProperty(
+    "position",
+    destroyedBlockData.position
   );
-  if (index !== -1) {
-    blockData.splice(index, 1);
-
-    io.emit("updateBlockData", blockData);
+  if (destroyedBlock) {
+    scene.remove(destroyedBlock);
   }
-};
+});
 
 document.addEventListener("mousedown", destroyCubeOnLeftClick);
 
