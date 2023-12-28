@@ -1,4 +1,3 @@
-//make able to attck other players and loose 1 heart each hit then regen over time, do 2 hearts when sword is out
 //make block break register to everyone
 //remove unessecary comments
 
