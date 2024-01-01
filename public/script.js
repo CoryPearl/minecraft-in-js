@@ -1,6 +1,3 @@
-//make block break register to everyone
-//remove unessecary comments
-
 import * as THREE from "./modules/three.module.js";
 import { PointerLockControls } from "./modules/PointerLookControls.js";
 import { TextGeometry } from "./modules/TextGemometry.js";
@@ -854,6 +851,7 @@ const placeCubeOnRightClick = (event) => {
 
       const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
       cube.position.copy(cubePosition);
+      console.log(cube);
       // scene.add(cube);
       socket.emit("placeBlock", {
         position: cubePosition,
@@ -940,11 +938,29 @@ const destroyCubeOnLeftClick = (event) => {
   }
 };
 
+function getObjectByPosition(x, y, z) {
+  var result = null;
+  var epsilon = 0.0001;
+
+  scene.traverse(function (child) {
+    if (
+      child instanceof THREE.Mesh &&
+      Math.abs(child.position.x - x) < epsilon &&
+      Math.abs(child.position.y - y) < epsilon &&
+      Math.abs(child.position.z - z) < epsilon
+    ) {
+      result = child;
+    }
+  });
+
+  return result;
+}
+
 socket.on("destroyedBlock", (destroyedBlockData) => {
-  // Find and remove the corresponding block from the client-side scene
-  const destroyedBlock = scene.getObjectByProperty(
-    "position",
-    destroyedBlockData.position
+  const destroyedBlock = getObjectByPosition(
+    destroyedBlockData.position.x,
+    destroyedBlockData.position.y,
+    destroyedBlockData.position.z
   );
   if (destroyedBlock) {
     scene.remove(destroyedBlock);

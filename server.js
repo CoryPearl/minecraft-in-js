@@ -82,17 +82,11 @@ const handleBlockDestruction = (socket, destroyData) => {
   );
 
   if (index !== -1) {
-    // Remove the block from the server-side data
     const destroyedBlock = blockData.splice(index, 1)[0];
 
-    // Emit the updated block data to all clients except the sender
     socket.broadcast.emit("updateBlockData", blockData);
 
-    // Send the destroyed block information to all clients (including the sender)
     io.emit("destroyedBlock", { position: destroyedBlock.position });
-
-    // You may want to emit the updated block data to the sender as well
-    // io.to(socket.id).emit("updateBlockData", blockData);
   }
 };
 
