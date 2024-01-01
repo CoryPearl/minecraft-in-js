@@ -468,7 +468,10 @@ const onKeyDown = (event) => {
     lateralMovementEnabled = true;
     lateralMovementDirection = event.code === "KeyA" ? -1 : 1;
   }
-  if (event.code === "KeyR") {
+  if (
+    event.code === "KeyR" &&
+    document.getElementById("chat").style.visibility == ""
+  ) {
     controls.getObject().position.set(0, 0, 0);
   }
 };
