@@ -85,7 +85,6 @@ const handleBlockDestruction = (socket, destroyData) => {
     const destroyedBlock = blockData.splice(index, 1)[0];
 
     socket.broadcast.emit("updateBlockData", blockData);
-
     io.emit("destroyedBlock", { position: destroyedBlock.position });
   }
 };

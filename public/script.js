@@ -1,3 +1,5 @@
+// make tress and rocks destroyable
+// add pvp
 import * as THREE from "./modules/three.module.js";
 import { PointerLockControls } from "./modules/PointerLookControls.js";
 import { TextGeometry } from "./modules/TextGemometry.js";
@@ -854,7 +856,6 @@ const placeCubeOnRightClick = (event) => {
 
       const cube = new THREE.Mesh(cubeGeometry, cubeMaterial);
       cube.position.copy(cubePosition);
-      console.log(cube);
       // scene.add(cube);
       socket.emit("placeBlock", {
         position: cubePosition,
@@ -930,6 +931,23 @@ const destroyCubeOnLeftClick = (event) => {
         }
         socket.emit("destroyBlock", { position: cubePosition });
       }
+      //else if (
+      //   intersects.length > 0 &&
+      //   intersects[0].object instanceof THREE.Mesh &&
+      //   intersects[0].object.geometry.parameters.width === 5 &&
+      //   intersects[0].object.geometry.parameters.height === 5 &&
+      //   intersects[0].object.geometry.parameters.depth === 5
+      // ) {
+      //   scene.remove(selectedObject.object);
+
+      //   const cubePosition1 = selectedObject.object.position;
+      //   console.log(cubePosition1);
+      //   if (cubePosition1) {
+      //     const audio = new Audio("./textures/place.mp3");
+      //     audio.play();
+      //   }
+      //   socket.emit("destroyBlock", { position: cubePosition1 });
+      // }
       // if (
       //   //for hitting another players
       //   intersects.length > 0 &&
@@ -960,6 +978,7 @@ function getObjectByPosition(x, y, z) {
 }
 
 socket.on("destroyedBlock", (destroyedBlockData) => {
+  console.log("destroyedBlockData");
   const destroyedBlock = getObjectByPosition(
     destroyedBlockData.position.x,
     destroyedBlockData.position.y,
